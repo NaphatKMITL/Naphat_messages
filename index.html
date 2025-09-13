@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naphat_messages - ส่งข้อความของคุณ</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #6e8efb;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        .description {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus {
+            border-color: #6e8efb;
+            outline: none;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        button {
+            background: linear-gradient(to right, #6e8efb, #a777e3);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #statusMessage {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .message-list {
+            margin-top: 30px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: white;
+        }
+        
+        .message-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .message-item:last-child {
+            border-bottom: none;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .message-content {
+            color: #555;
+        }
+        
+        .refresh-btn {
+            background: #28a745;
+            margin-top: 10px;
+            width: auto;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Naphat_messages</h1>
+        <p class="description">ส่งข้อความของคุณและเราจะเก็บไว้ใน Google Sheet เพื่อการติดตามกลับในภายหลัง</p>
+        
+        <form id="messageForm">
+            <div class="form-group">
+                <label for="name">ชื่อ:</label>
+                <input type="text" id="name" name="name" placeholder="กรุณากรอกชื่อของคุณ" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">อีเมล:</label>
+                <input type="email" id="email" name="email" placeholder="กรุณากรอกอีเมลของคุณ" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="message">ข้อความ:</label>
+                <textarea id="message" name="message" placeholder="เขียนข้อความของคุณที่นี่..." required></textarea>
+            </div>
+            
+            <button type="submit">ส่งข้อความ</button>
+        </form>
+        
+        <div id="statusMessage" class="hidden"></div>
+        
+        <div class="message-list">
+            <h3>ข้อความล่าสุด</h3>
+            <div id="messagesContainer"></div>
+            <button id="refreshBtn" class="refresh-btn">รีเฟรชข้อความ</button>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2023 Naphat_messages - All rights reserved</p>
+    </footer>
+
+    <script>
+        // ตั้งค่า URL ของ Google Apps Script Web App
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxxmOOqIooWjSsyFmeGmEmaaQGLmaU2CDYtTJO-OMvGKs2MB44xP-3LPGh_HdygSORN/exec';
+        
+        // ฟังก์ชันโหลดข้อความจาก Google Sheet
+        function loadMessages() {
+            fetch(scriptURL)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('messagesContainer');
+                    container.innerHTML = '';
+                    
+                    if (data.messages && data.messages.length > 0) {
+                        data.messages.forEach(msg => {
+                            const messageElement = document.createElement('div');
+                            messageElement.className = 'message-item';
+                            messageElement.innerHTML = `
+                                <div class="message-header">
+                                    <span>${msg.name}</span>
+                                    <span>${msg.timestamp}</span>
+                                </div>
+                                <div class="message-content">${msg.message}</div>
+                            `;
+                            container.appendChild(messageElement);
+                        });
+                    } else {
+                        container.innerHTML = '<p>ยังไม่มีข้อความ</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading messages:', error);
+                });
+        }
+        
+        // เมื่อฟอร์มถูกส่ง
+        document.getElementById('messageForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // รับค่าจากฟอร์ม
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            
+            // ปุ่ม submit และแสดงสถานะ loading
+            const submitButton = this.querySelector('button');
+            const originalButtonText = submitButton.textContent;
+            submitButton.textContent = 'กำลังส่ง...';
+            submitButton.disabled = true;
+            
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.classList.add('hidden');
+            
+            // ส่งข้อมูลไปยัง Google Apps Script
+            fetch(scriptURL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    message: message,
+                    timestamp: new Date().toLocaleString('th-TH')
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result === 'success') {
+                    statusMessage.textContent = 'ส่งข้อความสำเร็จ! ขอบคุณสำหรับข้อความของคุณ';
+                    statusMessage.className = 'success';
+                    document.getElementById('messageForm').reset();
+                    loadMessages(); // โหลดข้อความใหม่หลังจากส่ง
+                } else {
+                    throw new Error(data.error);
+                }
+            })
+            .catch(error => {
+                statusMessage.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
+                statusMessage.className = 'error';
+            })
+            .finally(() => {
+                statusMessage.classList.remove('hidden');
+                submitButton.textContent = originalButtonText;
+                submitButton.disabled = false;
+            });
+        });
+        
+        // เมื่อคลิกปุ่มรีเฟรช
+        document.getElementById('refreshBtn').addEventListener('click', loadMessages);
+        
+        // โหลดข้อความเมื่อหน้าเว็บโหลดเสร็จ
+        document.addEventListener('DOMContentLoaded', loadMessages);
+    </script>
+</body>
+</html>
